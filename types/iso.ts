@@ -88,6 +88,8 @@ export interface DashboardStats {
   completedCount: number;
   pendingApprovalCount: number;
   totalDueCount: number;
+  totalWorkItemsCount?: number; // Mẫu số chuẩn: 30 đầu việc ISO
+  completedWorkItemsCount?: number; // Số đầu việc đã có ghi nhận hoàn thành
   completionRate: number; // percentage 0 - 100
 }
 

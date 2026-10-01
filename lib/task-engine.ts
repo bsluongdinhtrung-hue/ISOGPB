@@ -237,17 +237,21 @@ export async function syncTasksForCurrentPeriod(): Promise<TaskRecord[]> {
 /**
  * Tính toán số liệu thống kê Dashboard
  */
-export function computeDashboardStats(tasks: TaskRecord[]): DashboardStats {
+export function computeDashboardStats(tasks: TaskRecord[], totalWorkItems: number = 30): DashboardStats {
   let overdueCount = 0;
   let dueSoonCount = 0;
   let completedCount = 0;
   let pendingApprovalCount = 0;
+  const completedItemIds = new Set<string>();
 
   for (const t of tasks) {
     if (t.status === "OVERDUE") overdueCount++;
     else if (t.status === "DUE_SOON") dueSoonCount++;
     else if (t.status === "PENDING_APPROVAL") pendingApprovalCount++;
-    else if (t.status === "COMPLETED") completedCount++;
+    else if (t.status === "COMPLETED") {
+      completedCount++;
+      completedItemIds.add(t.itemId);
+    }
   }
 
   const totalDueCount = overdueCount + dueSoonCount + completedCount + pendingApprovalCount;
@@ -259,6 +263,8 @@ export function computeDashboardStats(tasks: TaskRecord[]): DashboardStats {
     completedCount,
     pendingApprovalCount,
     totalDueCount,
+    totalWorkItemsCount: totalWorkItems || 30,
+    completedWorkItemsCount: completedItemIds.size,
     completionRate,
   };
 }

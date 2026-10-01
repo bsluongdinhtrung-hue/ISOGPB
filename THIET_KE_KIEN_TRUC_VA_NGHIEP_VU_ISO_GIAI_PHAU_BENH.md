@@ -112,7 +112,12 @@
 
 ### 1. Dashboard Tổng quan (`/`)
 - Mọi thành viên đều xem được.
-- **Top Bar:** 4 thẻ KPI (Quá hạn, Sắp đến hạn, Đã hoàn thành, Tỷ lệ tuân thủ %). Thanh Header trên cùng được dọn sạch, loại bỏ hoàn toàn các link module lẻ để giữ giao diện chuẩn mực, tinh gọn.
+- **Top Bar - 4 Thẻ KPI Chuẩn hóa theo 30 Đầu việc ISO (Medical Precision):**
+  - **Mẫu số chuẩn cố định 30 đầu việc:** Loại bỏ hoàn toàn phân số động `7/26` gây hiểu lầm. Thẻ **ĐÃ HOÀN THÀNH** thể hiện rõ: `X lượt đã nộp / 30 việc ISO` kèm chú thích `Ghi nhận tại Y đầu việc có lượt đã xong`.
+  - **Phân tách minh bạch giữa "Lượt ghi nhận (Instances)" và "Đầu việc quản trị (Work Items)":**
+    - Thẻ Quá hạn: `X lượt trễ (Y đầu việc)` $\rightarrow$ Trưởng khoa nắm ngay việc nợ dồn vào bao nhiêu quy trình.
+    - Thẻ Sắp đến hạn: `X lượt đôn đốc (Y đầu việc)`.
+  - Thanh Header trên cùng được dọn sạch, loại bỏ hoàn toàn các link module lẻ để giữ giao diện chuẩn mực, tinh gọn.
 - **Khu vực Phê duyệt Trực quan cho Trưởng khoa (Thực chất, Chống duyệt hình thức):**
   - Hiển thị trực tiếp ảnh thu nhỏ (Thumbnail) của sổ ghi chép / tài liệu minh chứng ngay trên thẻ chờ duyệt của Trưởng khoa.
   - Tích hợp bộ xem ảnh **Lightbox Modal**: Trưởng khoa bấm vào ảnh là phóng to toàn màn hình sắc nét để đọc từng dòng số liệu ghi chép thực tế.
@@ -122,6 +127,10 @@
 - **Thẻ Tiến độ Nhân sự:** Thống kê khối lượng từng người, bấm vào lọc ra ngay công việc của người đó (BS. Đào Thị Nguyệt ra đúng 2 việc).
 - **Bảng 30 Đầu việc Quản lý Chất lượng (ISO 15189):**
   - **Cơ chế giữ chuẩn 30 dòng (Anti-clutter):** Gom nhóm theo từng đầu việc để bảng luôn duy trì đúng 30 dòng đại diện chuẩn (W001 – W030), không bị phình to khi công việc hàng ngày tích lũy qua nhiều ngày. Bộ nút lọc phía trên bảng (`Tất cả`, `Quá hạn`, `Sắp đến hạn`, `Chờ duyệt`, `Đã xong`) tính toán chính xác trên danh mục 30 đầu việc này, đảm bảo nhãn "Tất cả" luôn hiển thị đúng chuẩn `Tất cả (30)`.
+  - **Cơ chế Lọc "Đã xong" & Theo dõi Lịch sử Nộp (Audit History):**
+    - Khi lọc "Đã xong", hệ thống không bị rỗng (0 dòng) khi các đầu việc hàng ngày (như `XN.QL.10` của CN. Trần Thị Vân) bước sang ngày mới.
+    - Hiển thị huy hiệu trực quan: `✓ Đã nộp X ngày gần nhất (Lượt hôm nay: Đang thực hiện)`.
+    - **Modal Lịch sử nộp chi tiết:** Tại cột Minh chứng, Trưởng khoa có nút `Lịch sử (X ngày)`. Bấm vào sẽ mở popup liệt kê chi tiết toàn bộ các ngày đã nộp trong kỳ (ngày kiểm soát, thời gian nộp, ghi chú, xem ảnh sổ/mở Drive của từng ngày).
   - **Cảnh báo nợ việc hàng ngày:** Nếu đầu việc hàng ngày có các ngày cũ chưa làm, hệ thống hiển thị nhãn cảnh báo đỏ trực tiếp dưới tên đầu việc: `⚠️ Còn nợ X ngày trước chưa kiểm soát`.
   - Cấu trúc các cột: **`STT` (đánh số thứ tự 1-30)**, `Mã`, `Đầu việc quản lý`, `Phụ trách`, `Hạn hoàn thành`, `Trạng thái`, `Minh chứng`, `Thao tác`, và **cột cuối cùng là `Link ngoài`**.
   - **Cột Link ngoài (Cơ chế bền vững - Single Source of Truth):**

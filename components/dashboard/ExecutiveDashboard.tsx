@@ -54,6 +54,9 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
   const [rejectionReason, setRejectionReason] = useState("");
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
+  // Modal xem lịch sử nộp các ngày của đầu việc
+  const [selectedHistoryWorkItem, setSelectedHistoryWorkItem] = useState<(TaskRecord & { historyTasks?: TaskRecord[]; completedInstancesCount?: number }) | null>(null);
+
   // Modal gắn / sửa / xóa link ngoài
   const [editingLinkTask, setEditingLinkTask] = useState<TaskRecord | null>(null);
   const [inputLink, setInputLink] = useState("");
@@ -82,12 +85,13 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
   }
 
   // Gom nhóm danh sách 30 đầu việc: Mỗi đầu việc hiển thị đúng 1 dòng duy nhất (giữ chuẩn 30 dòng)
-  // Nếu có công việc hàng ngày của ngày cũ chưa hoàn thành, hiển thị cảnh báo tồn đọng
+  // Theo dõi cả các lượt nợ quá hạn và các lượt đã hoàn thành trong kỳ
   const groupedWorkItems = useMemo(() => {
     const map = new Map<string, {
       latestTask: TaskRecord;
       allTasks: TaskRecord[];
       overdueCount: number;
+      completedCount: number;
     }>();
 
     for (const t of tasks) {
@@ -95,13 +99,17 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
         map.set(t.itemId, {
           latestTask: t,
           allTasks: [t],
-          overdueCount: t.status === "OVERDUE" ? 1 : 0
+          overdueCount: t.status === "OVERDUE" ? 1 : 0,
+          completedCount: t.status === "COMPLETED" ? 1 : 0,
         });
       } else {
         const entry = map.get(t.itemId)!;
         entry.allTasks.push(t);
         if (t.status === "OVERDUE") {
           entry.overdueCount++;
+        }
+        if (t.status === "COMPLETED") {
+          entry.completedCount++;
         }
         // Chọn task mới nhất làm đại diện
         if (t.dueDate > entry.latestTask.dueDate || (t.dueDate === entry.latestTask.dueDate && t.period > entry.latestTask.period)) {
@@ -111,9 +119,19 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
     }
 
     return Array.from(map.values()).map(entry => {
-      const rep = { ...entry.latestTask } as TaskRecord & { backlogOverdueCount?: number };
+      const rep = { ...entry.latestTask } as TaskRecord & { 
+        backlogOverdueCount?: number;
+        completedInstancesCount?: number;
+        historyTasks?: TaskRecord[];
+      };
       if (entry.overdueCount > 0) {
         rep.backlogOverdueCount = entry.overdueCount;
+      }
+      if (entry.completedCount > 0) {
+        rep.completedInstancesCount = entry.completedCount;
+        rep.historyTasks = entry.allTasks
+          .filter(t => t.status === "COMPLETED")
+          .sort((a, b) => b.dueDate.localeCompare(a.dueDate));
       }
       return rep;
     });
@@ -129,11 +147,14 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
     for (const item of groupedWorkItems) {
       if (item.status === "OVERDUE" || ((item as any).backlogOverdueCount && (item as any).backlogOverdueCount > 0)) {
         overdue++;
-      } else if (item.status === "DUE_SOON") {
+      }
+      if (item.status === "DUE_SOON") {
         dueSoon++;
-      } else if (item.status === "PENDING_APPROVAL") {
+      }
+      if (item.status === "PENDING_APPROVAL") {
         pending++;
-      } else if (item.status === "COMPLETED") {
+      }
+      if (item.status === "COMPLETED" || ((item as any).completedInstancesCount && (item as any).completedInstancesCount > 0)) {
         completed++;
       }
     }
@@ -152,7 +173,9 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
     const matchesFilter = activeFilter === "ALL" 
       ? true 
       : activeFilter === "OVERDUE"
-      ? (task.status === "OVERDUE" || (task.backlogOverdueCount && task.backlogOverdueCount > 0))
+      ? (task.status === "OVERDUE" || (Boolean((task as any).backlogOverdueCount) && (task as any).backlogOverdueCount > 0))
+      : activeFilter === "COMPLETED"
+      ? (task.status === "COMPLETED" || (Boolean((task as any).completedInstancesCount) && (task as any).completedInstancesCount > 0))
       : task.status === activeFilter;
 
     const matchesSearch = 
@@ -284,7 +307,7 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
             <span className="text-3xl sm:text-4xl font-extrabold text-[#B3261E] font-mono">
               {stats.overdueCount}
             </span>
-            <span className="text-xs text-[#5C6B68]">đầu việc trễ hạn</span>
+            <span className="text-xs text-[#5C6B68]">lượt trễ ({tableCounts.overdue} đầu việc)</span>
           </div>
           <p className="text-[11px] text-[#5C6B68] mt-2">Bấm để lọc các việc cần xử lý gấp</p>
         </button>
@@ -306,7 +329,7 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
             <span className="text-3xl sm:text-4xl font-extrabold text-[#8A5108] font-mono">
               {stats.dueSoonCount}
             </span>
-            <span className="text-xs text-[#5C6B68]">cần đôn đốc</span>
+            <span className="text-xs text-[#5C6B68]">lượt đôn đốc ({tableCounts.dueSoon} đầu việc)</span>
           </div>
           <p className="text-[11px] text-[#5C6B68] mt-2">Theo số ngày nhắc cấu hình</p>
         </button>
@@ -328,9 +351,9 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
             <span className="text-3xl sm:text-4xl font-extrabold text-[#1F5C55] font-mono">
               {stats.completedCount}
             </span>
-            <span className="text-xs text-[#5C6B68]">/ {stats.totalDueCount} đầu việc</span>
+            <span className="text-xs text-[#5C6B68]">lượt đã nộp / {stats.totalWorkItemsCount || 30} việc ISO</span>
           </div>
-          <p className="text-[11px] text-[#5C6B68] mt-2">Đã có minh chứng & phê duyệt</p>
+          <p className="text-[11px] text-[#5C6B68] mt-2">Ghi nhận tại {tableCounts.completed} đầu việc có lượt đã xong</p>
         </button>
 
         {/* KPI 4: Tỷ lệ tuân thủ (%) */}
@@ -778,6 +801,12 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
                         <span>⚠️ Còn nợ {(t as any).backlogOverdueCount} ngày trước chưa kiểm soát</span>
                       </div>
                     )}
+                    {(t as any).completedInstancesCount && (t as any).completedInstancesCount > 0 && (
+                      <div className="text-[11px] text-[#1F5C55] bg-[#E3EFEC] px-2 py-0.5 rounded mt-1 font-medium inline-flex items-center gap-1">
+                        <span>✓ Đã nộp {(t as any).completedInstancesCount} ngày gần nhất</span>
+                        {t.status === "DUE_SOON" && <span className="text-[#8A5108] ml-1">(Lượt hôm nay: Đang thực hiện)</span>}
+                      </div>
+                    )}
                     {t.rejectionReason && (
                       <div className="text-[11px] text-[#B3261E] bg-[#FBE6E4] px-2 py-0.5 rounded mt-1">
                         Yêu cầu làm lại: {t.rejectionReason}
@@ -797,7 +826,17 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
                   </td>
                   <td className="py-3 px-3">{getStatusBadge(t.status)}</td>
                   <td className="py-3 px-3">
-                    {t.evidenceUrl ? (
+                    {(t as any).historyTasks && (t as any).historyTasks.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedHistoryWorkItem(t as any)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#E3EFEC] text-[#1F5C55] text-xs font-semibold hover:bg-[#1F5C55] hover:text-white transition-colors cursor-pointer shadow-2xs"
+                        title="Bấm để xem chi tiết lịch sử nộp các ngày"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        <span>Lịch sử ({(t as any).historyTasks.length} ngày)</span>
+                      </button>
+                    ) : t.evidenceUrl ? (
                       <a
                         href={t.evidenceUrl}
                         target="_blank"
@@ -1036,6 +1075,111 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
                 alt={previewImage.title} 
                 className="max-h-[75vh] w-auto max-w-full object-contain rounded shadow-lg"
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xem Lịch Sử Nộp Báo Cáo Của Đầu Việc */}
+      {selectedHistoryWorkItem && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+          onClick={() => setSelectedHistoryWorkItem(null)}
+        >
+          <div 
+            className="bg-white rounded-xl border border-[#DDE3E0] shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-[#DDE3E0] pb-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-mono font-bold text-xs text-[#1F5C55] bg-[#E3EFEC] px-2 py-0.5 rounded">
+                    {selectedHistoryWorkItem.itemCode}
+                  </span>
+                  <span className="text-xs text-[#5C6B68]">
+                    Phụ trách: <strong className="text-[#12211F]">{selectedHistoryWorkItem.assigneeName}</strong>
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-[#12211F]">
+                  Lịch sử nộp: {selectedHistoryWorkItem.itemName}
+                </h3>
+                <p className="text-xs text-[#5C6B68] mt-0.5">
+                  Đã ghi nhận {selectedHistoryWorkItem.historyTasks?.length || 0} lượt nộp hoàn thành trong kỳ.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedHistoryWorkItem(null)}
+                className="p-1 rounded-md text-[#5C6B68] hover:text-[#12211F] hover:bg-[#DDE3E0] transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Danh sách các lượt đã nộp */}
+            <div className="overflow-y-auto space-y-3 pr-1 divide-y divide-[#DDE3E0]">
+              {selectedHistoryWorkItem.historyTasks?.map((hTask, idx) => (
+                <div key={hTask.taskId} className="pt-3 first:pt-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold font-mono text-[#12211F]">
+                        #{idx + 1}. Ngày kiểm soát: {hTask.dueDate}
+                      </span>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#E3EFEC] text-[#1F5C55] font-mono">
+                        ĐÃ XONG
+                      </span>
+                    </div>
+                    {hTask.completedDate && (
+                      <p className="text-[11px] text-[#5C6B68]">
+                        Thời gian nộp: <span className="font-mono text-[#12211F]">{hTask.completedDate}</span>
+                      </p>
+                    )}
+                    {hTask.note && (
+                      <p className="text-xs text-[#12211F] italic bg-[#F7F8F6] p-2 rounded border border-[#DDE3E0]">
+                        "{hTask.note}"
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-2">
+                    {isImageUrl(hTask.evidenceUrl) ? (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewImage({ url: hTask.evidenceUrl!, title: `${hTask.itemCode} (${hTask.dueDate})` })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#1F5C55] text-white text-xs font-semibold hover:bg-[#16443F] transition-colors"
+                      >
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        <span>Xem ảnh sổ</span>
+                      </button>
+                    ) : hTask.evidenceUrl ? (
+                      <a
+                        href={hTask.evidenceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#1F5C55] text-white text-xs font-semibold hover:bg-[#16443F] transition-colors"
+                      >
+                        <HardDrive className="h-3.5 w-3.5" />
+                        <span>Mở Drive</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-[#5C6B68]">Không có đính kèm</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-3 border-t border-[#DDE3E0] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedHistoryWorkItem(null)}
+                className="px-4 py-2 text-xs font-semibold text-[#12211F] bg-[#F7F8F6] hover:bg-[#E3EFEC] rounded-md transition-colors"
+              >
+                Đóng
+              </button>
             </div>
           </div>
         </div>
