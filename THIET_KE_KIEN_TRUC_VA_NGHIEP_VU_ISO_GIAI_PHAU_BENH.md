@@ -122,7 +122,7 @@
   - Hiển thị trực tiếp ảnh thu nhỏ (Thumbnail) của sổ ghi chép / tài liệu minh chứng ngay trên thẻ chờ duyệt của Trưởng khoa.
   - Tích hợp bộ xem ảnh **Lightbox Modal**: Trưởng khoa bấm vào ảnh là phóng to toàn màn hình sắc nét để đọc từng dòng số liệu ghi chép thực tế.
   - Hiển thị thẻ nút bấm xanh lá mở liên kết Google Drive / SharePoint khi nhân viên đính kèm link ngoài.
-  - Tự động gắn cờ cảnh báo đỏ nếu nhân viên nộp form trống: `⚠️ Không có ảnh/link minh chứng` kèm khuyến nghị bấm "Yêu cầu bổ sung", loại bỏ hoàn toàn hiện tượng duyệt hình thức.
+  - Tự động gắn cờ cảnh báo đỏ nếu nhân viên nộp form trống: `⚠️ Không có ảnh/tài liệu/ link minh chứng` kèm khuyến nghị bấm "Yêu cầu bổ sung", loại bỏ hoàn toàn hiện tượng duyệt hình thức.
 - **Bảng Điểm nghẽn:** Đúng 7 cột chuẩn (`STT`, `Mã`, `Đầu việc quản lý`, `Phụ trách`, `Hạn hoàn thành (kèm số ngày trễ)`, `Trạng thái`, `Thao tác` có nút xem minh chứng trực tiếp). Ưu tiên việc Quá hạn lên trên đầu. Mọi ngày trễ của công việc hàng ngày đều được liệt kê chi tiết tại đây để Trưởng khoa đôn đốc.
 - **Thẻ Tiến độ Nhân sự:** Thống kê khối lượng từng người, bấm vào lọc ra ngay công việc của người đó (BS. Đào Thị Nguyệt ra đúng 2 việc).
 - **Bảng 30 Đầu việc Quản lý Chất lượng (ISO 15189):**

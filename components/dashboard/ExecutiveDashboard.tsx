@@ -476,7 +476,7 @@ export function ExecutiveDashboard({ initialTasks, initialStats, staffPerformanc
                     <div className="mt-2.5 p-2.5 rounded-lg bg-[#FDF3F1] border border-[#F5C4B8] flex items-start gap-2 text-[#99281A]">
                       <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                       <div className="text-xs">
-                        <strong className="font-semibold">⚠️ Không có ảnh/link minh chứng:</strong>
+                        <strong className="font-semibold">⚠️ Không có ảnh/tài liệu/ link minh chứng:</strong>
                         <p className="text-[11px] text-[#99281A]/80 mt-0.5">
                           Nhân viên nộp trống, chưa đính kèm ảnh sổ ghi hay tài liệu. Trưởng khoa nên bấm <em>Yêu cầu bổ sung</em> để nhân viên cập nhật lại.
                         </p>
