@@ -4,6 +4,19 @@ import { auth } from "@/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { revalidatePath } from "next/cache";
 import { UserProfile, UserRole } from "@/types/iso";
+import bcrypt from "bcryptjs";
+
+/**
+ * Sinh mật khẩu tạm ngẫu nhiên an toàn (10 ký tự gồm chữ hoa, thường, số)
+ */
+function generateSecureTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let pwd = "";
+  for (let i = 0; i < 10; i++) {
+    pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return pwd;
+}
 
 /**
  * Cán bộ nhân viên tự đổi mật khẩu (bắt buộc khi đăng nhập lần đầu)
@@ -31,20 +44,28 @@ export async function changeMyPassword(currentPassword: string, newPassword: str
       return { success: false, message: "Không tìm thấy thông tin tài khoản." };
     }
 
-    const storedPassword = userData.password || "isogpb@2026";
+    const storedPassword = userData.password;
+    if (!storedPassword || typeof storedPassword !== "string") {
+      return { success: false, message: "Tài khoản chưa được thiết lập mật khẩu." };
+    }
 
-    if (
-      currentPassword.trim() !== storedPassword &&
-      currentPassword.trim() !== "isogpb@2026" &&
-      currentPassword.trim() !== "123456"
-    ) {
+    let isCurrentValid = false;
+    if (storedPassword.startsWith("$2")) {
+      isCurrentValid = await bcrypt.compare(currentPassword.trim(), storedPassword);
+    } else {
+      isCurrentValid = (currentPassword.trim() === storedPassword);
+    }
+
+    if (!isCurrentValid) {
       return { success: false, message: "Mật khẩu hiện tại không chính xác." };
     }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword.trim(), 10);
 
     const { error: updateErr } = await supabaseAdmin
       .from("iso_users")
       .update({
-        password: newPassword.trim(),
+        password: hashedNewPassword,
         must_change_password: false,
         updated_at: new Date().toISOString(),
       })
@@ -96,6 +117,9 @@ export async function createUser(data: {
       return { success: false, message: "Email này đã tồn tại trong danh sách nhân sự." };
     }
 
+    const tempPassword = data.initialPassword?.trim() || generateSecureTempPassword();
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
     const nowIso = new Date().toISOString();
     const { error: insertErr } = await supabaseAdmin.from("iso_users").insert({
       id: emailLower,
@@ -104,7 +128,7 @@ export async function createUser(data: {
       role: data.role || "USER",
       title: data.title.trim() || (data.role === "ADMIN" ? "Trưởng khoa / Admin" : "Kỹ thuật viên"),
       phone: data.phone?.trim() || "",
-      password: data.initialPassword?.trim() || "isogpb@2026",
+      password: hashedPassword,
       must_change_password: data.role === "ADMIN" ? false : true,
       active: true,
       created_at: nowIso,
@@ -116,7 +140,11 @@ export async function createUser(data: {
     revalidatePath("/admin/users");
     revalidatePath("/assignment");
     revalidatePath("/");
-    return { success: true, message: "Đã thêm nhân viên mới thành công!" };
+    return { 
+      success: true, 
+      message: `Đã thêm nhân viên mới thành công! Mật khẩu tạm ban đầu: ${tempPassword}`,
+      tempPassword,
+    };
   } catch (error: any) {
     console.error("Error creating user:", error);
     return { success: false, message: error.message || "Lỗi khi thêm nhân viên." };
@@ -216,13 +244,14 @@ export async function resetUserPassword(email: string, newTempPassword?: string)
   }
 
   const emailLower = email.trim().toLowerCase();
-  const passwordToSet = newTempPassword?.trim() || "isogpb@2026";
+  const tempPassword = newTempPassword?.trim() || generateSecureTempPassword();
 
   try {
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
     const { error: updateErr } = await supabaseAdmin
       .from("iso_users")
       .update({
-        password: passwordToSet,
+        password: hashedPassword,
         must_change_password: true,
         updated_at: new Date().toISOString(),
       })
@@ -233,7 +262,8 @@ export async function resetUserPassword(email: string, newTempPassword?: string)
     revalidatePath("/admin/users");
     return {
       success: true,
-      message: `Đã đặt lại mật khẩu thành công! Mật khẩu tạm: ${passwordToSet}`,
+      message: `Đã đặt lại mật khẩu thành công! Mật khẩu tạm: ${tempPassword}`,
+      tempPassword,
     };
   } catch (error: any) {
     console.error("Error resetting password:", error);

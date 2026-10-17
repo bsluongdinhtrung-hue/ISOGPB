@@ -40,3 +40,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw materials, data and scratch scripts (rule.md)
+Nguyen_lieu_va_Scripts/
+RA_SOAT_LOI_ISO_GIAI_PHAU_BENH.md
+*.xlsx
+*.rar
+

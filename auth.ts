@@ -1,8 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "./lib/supabase-admin";
-import { FALLBACK_USERS } from "./lib/fallback-data";
 
 const ADMIN_EMAILS = [
   "bsluongdinhtrung@gmail.com",
@@ -39,17 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             .single();
 
           if (error || !userData) {
-            // Check fallback for admins with default admin password
-            if (isAdmin && (inputPassword === "MeoMoon2789" || inputPassword === "isogpb@2026")) {
-              return {
-                id: emailLower,
-                email: emailLower,
-                name: emailLower.includes("luongdinhtrung") ? "Lương Đình Trung" : "Đào Thị Nguyệt",
-                role: "ADMIN",
-                title: "Trưởng khoa",
-                mustChangePassword: false,
-              };
-            }
+            console.error(`Authorize error: account ${emailLower} not found or db error:`, error?.message);
             return null;
           }
 
@@ -59,13 +49,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null;
           }
 
-          const storedPassword = userData.password || (isAdmin ? "MeoMoon2789" : "isogpb@2026");
+          const storedPassword = userData.password;
+          if (!storedPassword || typeof storedPassword !== "string") {
+            console.error(`Authorize error: user ${emailLower} has no password configured.`);
+            return null;
+          }
 
-          // Check password
-          const isValidPassword =
-            inputPassword === storedPassword ||
-            (isAdmin && inputPassword === "MeoMoon2789") ||
-            (!isAdmin && inputPassword === "isogpb@2026");
+          let isValidPassword = false;
+
+          // 1. Check if stored password is a bcrypt hash
+          if (storedPassword.startsWith("$2")) {
+            isValidPassword = await bcrypt.compare(inputPassword, storedPassword);
+          } else {
+            // 2. Legacy plaintext password check with graceful lazy rehash
+            isValidPassword = (inputPassword === storedPassword);
+            if (isValidPassword) {
+              try {
+                const hashedPassword = await bcrypt.hash(inputPassword, 10);
+                await supabaseAdmin
+                  .from("iso_users")
+                  .update({
+                    password: hashedPassword,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", emailLower);
+                console.log(`Successfully migrated user ${emailLower} password to bcrypt hash.`);
+              } catch (migrateErr) {
+                console.error(`Failed to migrate password to bcrypt for ${emailLower}:`, migrateErr);
+              }
+            }
+          }
 
           if (isValidPassword) {
             const userIsAdmin = isAdmin || userData.role === "ADMIN";
@@ -83,31 +96,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           return null;
         } catch (error) {
-          console.error("Authorize error in credentials provider (Supabase fallback):", error);
-          if (isAdmin && (inputPassword === "MeoMoon2789" || inputPassword === "isogpb@2026")) {
-            return {
-              id: emailLower,
-              email: emailLower,
-              name: emailLower.includes("luongdinhtrung") ? "Lương Đình Trung" : "Đào Thị Nguyệt",
-              role: "ADMIN",
-              title: "Trưởng khoa",
-              mustChangePassword: false,
-            };
-          }
-          const fallbackUser = FALLBACK_USERS.find((u) => u.email.toLowerCase() === emailLower);
-          if (
-            fallbackUser &&
-            (inputPassword === fallbackUser.password || inputPassword === "isogpb@2026" || inputPassword === "123456")
-          ) {
-            return {
-              id: emailLower,
-              email: emailLower,
-              name: fallbackUser.fullName,
-              role: fallbackUser.role,
-              title: fallbackUser.title,
-              mustChangePassword: fallbackUser.mustChangePassword ?? true,
-            };
-          }
+          console.error("Authorize error in credentials provider:", error);
           return null;
         }
       },

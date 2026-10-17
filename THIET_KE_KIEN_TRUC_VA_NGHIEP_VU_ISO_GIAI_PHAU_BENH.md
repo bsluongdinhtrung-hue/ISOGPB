@@ -1,60 +1,63 @@
-# BẢN MÔ TẢ TOÀN BỘ THIẾT KẾ KIẾN TRÚC VÀ NGHIỆP VỤ
-## HỆ THỐNG: e-ISO PATHOLOGY TRACKER – KHOA GIẢI PHẪU BỆNH
+# HỒ SƠ DỰ ÁN: e-ISO PATHOLOGY TRACKER – KHOA GIẢI PHẪU BỆNH
+## BẢN MÔ TẢ TOÀN BỘ THIẾT KẾ KIẾN TRÚC VÀ NGHIỆP VỤ
 
 ---
 
-## 1. TỔNG QUAN HỆ THỐNG & NGUYÊN TẮC CỐT LÕI (CORE PHILOSOPHY)
+## 1. MỤC TIÊU & SẢN PHẨM ĐẦU RA
 - **Tên hệ thống:** e-ISO Pathology Tracker – Khoa Giải phẫu bệnh
 - **Tên miền hoạt động chính thức:** `https://isogiaiphaubenh.bstrung.vn`
-- **Kho lưu trữ GitHub chính:** `https://github.com/benhhocnoikhoacom-ctrl/isogiaiphaubenh.git` (nhánh `main`)
-- **Kho lưu trữ GitHub phụ:** `https://github.com/bsluongdinhtrung-hue/ISOGPB.git` (nhánh `main`)
-- **Cơ sở dữ liệu:** Supabase PostgreSQL (Project Ref: `fkjmiatwdcgxdkqnwhgn`)
-- **Hệ thống Tự động Giữ thức Vĩnh viễn 24/7 (Forever-Active Dual Engine Architecture):** Kiến trúc phòng thủ 2 lớp song song kết hợp giữa GitHub Actions và Vercel Cron Job chạy tự động lúc **17:05 chiều mỗi ngày (10:05 UTC)**:
-  1. *Lớp 1 (GitHub Actions):* Ping Supabase, gọi API Web Dashboard (quét quá hạn 17:05), và cơ chế Native 24/7 Anti-Disabling (gọi GitHub REST API kích hoạt duy trì workflow và tự động tạo commit giữ thức nhẹ sau 25 ngày bằng script nội bộ chuẩn GitHub, an toàn tuyệt đối và độc lập hoàn toàn khỏi thư viện bên thứ ba).
-  2. *Lớp 2 (Vercel Cron Job - `vercel.json`):* Chạy độc lập trên hạ tầng đám mây Vercel lúc 10:05 UTC (17:05 VN) gọi vào `/api/cron/keep-alive`.
-  3. *Tác vụ Kép tại API:* Vừa giữ thức Supabase và làm ấm Serverless Vercel (xóa Cold-start), vừa tự động kích hoạt quét quá hạn (Overdue Sweep) toàn bộ công việc trong ngày.
-- **Nguồn chuẩn nghiệp vụ (Single Source of Truth):** `INPUT_CHO_IT_eISO_MVP_v2_co_email.xlsx` và `Trao đổi ban đầu.txt`.
+- **Kho lưu trữ GitHub chính thức:** `https://github.com/bsluongdinhtrung-hue/ISOGPB.git` (nhánh `main`)
 - **Mục tiêu số 1:** Quản lý **ĐẦU VIỆC** theo tiêu chuẩn **ISO 15189** ở cấp quản lý của Trưởng khoa và cán bộ nhân viên: ai phụ trách, hạn chót, trạng thái, minh chứng thực hiện, cảnh báo chậm trễ, phê duyệt báo cáo.
 - **Quy tắc vàng:** Không thay thế hồ sơ ISO chi tiết hay hệ thống LIS/HIS; không nhập chi tiết từng máy móc hay từng ca bệnh phẩm/lam/block. Hệ thống đóng vai trò là **Trung tâm chỉ huy & Điều phối (Hub)**.
 
 ---
 
-## 2. THIẾT KẾ TÀI KHOẢN & PHÂN QUYỀN (USERS & ROLES)
-
-### A. Danh sách 8 nhân sự hạt nhân + 1 Admin kỹ thuật chuẩn theo Excel
-
-| Mã NV | Họ và tên | Chức danh | Email (Tên đăng nhập) | Số điện thoại | Vai trò (Role) | Mật khẩu ban đầu | Đổi MK lần đầu? |
-| :---: | :--- | :--- | :--- | :---: | :---: | :---: | :---: |
-| **U001** | **Đào Thị Nguyệt** | Trưởng khoa | `Nguyethmu@gmail.com` | `0382337010` | **ADMIN** | `MeoMoon2789` | Không |
-| **U002** | **Lê Tuấn Anh** | Bác sĩ | `Drtuananh189@gmail.com` | `0987372288` | **USER** | `isogpb@2026` | **Bắt buộc** |
-| **U003** | **Nguyễn Thị Ngân** | Bác sĩ | `nguyenthingan.bsdk@gmail.com` | `0369239809` | **USER** | `isogpb@2026` | **Bắt buộc** |
-| **U004** | **Lương Thị Thùy Dung** | Kỹ thuật viên | `thuydung71@gmail.com` | `0916787186` | **USER** | `isogpb@2026` | **Bắt buộc** |
-| **U005** | **Nguyễn Thị Thu Hương** | Kỹ thuật viên | `Funny.monkeyhn345@gmail.com` | `0936099158` | **USER** | `isogpb@2026` | **Bắt buộc** |
-| **U006** | **Trần Thị Vân** | Kỹ thuật viên | `Tranvanbvdg@gmail.com` | `0399572155` | **USER** | `isogpb@2026` | **Bắt buộc** |
-| **U007** | **Dương Văn Quang** | Kỹ thuật viên | `quangvictor@yahoo.com` | `0835028886` | **USER** | `isogpb@2026` | **Bắt buộc** |
-| **U008** | **Lại Hải Hà** | Kỹ thuật viên | `laihaiha92@gmail.com` | `0988468514` | **USER** | `isogpb@2026` | **Bắt buộc** |
-| **ADMIN**| **Lương Đình Trung** | Bác sĩ / IT Admin | `bsluongdinhtrung@gmail.com` | `0987.654.321` | **ADMIN** | `MeoMoon2789` | Không |
-
-*(Ghi chú: Email `luongdinhtrunghue@gmail.com` cũng là alias của BS. Lương Đình Trung).*
-
-### B. Ma trận phân quyền
-- **Admin (Trưởng khoa Đào Thị Nguyệt & BS. Lương Đình Trung):**
-  - Xem toàn cảnh Dashboard khoa.
-  - Phê duyệt / Yêu cầu làm lại các báo cáo của nhân viên.
-  - Điều chỉnh phân công người phụ trách, chu kỳ, hạn chót, số ngày nhắc trước.
-  - Quản lý danh sách nhân sự: Thêm, sửa, vô hiệu hóa, xóa, đặt lại mật khẩu cho nhân viên.
-  - Xem lịch sử nhật ký kiểm toán (Audit Log).
-- **User (Bác sĩ, Kỹ thuật viên):**
-  - **Được xem toàn cảnh Dashboard** để nắm tiến độ chung của toàn khoa.
-  - Xem danh sách công việc được giao của chính mình tại trang "Đầu việc của tôi".
-  - Nộp báo cáo hoàn thành, ghi chú và đính kèm minh chứng cho công việc của mình.
-  - Tự đổi mật khẩu cá nhân. Không được duyệt bài của người khác, không được sửa cấu hình hệ thống.
+## 2. QUY TẮC RIÊNG CỦA DỰ ÁN
+1. **Sửa đúng chỗ, phạm vi tối thiểu (Surgical Edit):** Không sửa lan man, không viết lại những thành phần đang chạy tốt.
+2. **Kiểm tra trước khi đẩy code:** Phải chạy `npm run build` và kiểm thử chức năng tự động để đảm bảo 0 lỗi trước khi commit.
+3. **Đồng bộ GitHub:** Chỉ đẩy lên nhánh `main` của repository `ISOGPB`.
+4. **Bảo mật xác thực & Dữ liệu:**
+   - Mật khẩu được mã hóa an toàn bằng `bcrypt` (cost factor 10), tuyệt đối không lưu hoặc so sánh mật khẩu dạng chữ thường (plaintext).
+   - Không chứa bất kỳ mật khẩu cố định nào trong mã nguồn hoặc cửa sau (backdoor) trong cơ chế dự phòng.
+   - Khi tạo nhân viên mới hoặc đặt lại mật khẩu: Sinh mật khẩu tạm thời ngẫu nhiên $\ge 10$ ký tự, bắt buộc đổi mật khẩu mới ở lần đăng nhập đầu tiên.
+   - Tuyệt đối không đưa số điện thoại cá nhân, mật khẩu, file nguyên liệu thô vào file hồ sơ hay commit lên git.
 
 ---
 
-## 3. DANH MỤC 30 ĐẦU VIỆC QUẢN LÝ ISO & GẮN LINK NGOÀI
+## 3. THIẾT KẾ KIẾN TRÚC VÀ NGHIỆP VỤ
 
-| Mã | Mã ISO | Tên đầu việc quản lý | Người phụ trách | Tần suất | Quy tắc hạn hoàn thành | Trưởng khoa duyệt? | Nhắc trước | Link hệ thống ngoài gắn sẵn |
+### 3.1. Danh mục nhân sự hạt nhân & Phân quyền
+Danh sách cán bộ nhân sự chuẩn theo cơ cấu khoa (không lưu mật khẩu, thông tin riêng tư):
+
+| Mã NV | Họ và tên | Chức danh | Vai trò (Role) | Ghi chú tài khoản |
+| :---: | :--- | :--- | :---: | :--- |
+| **U001** | **Đào Thị Nguyệt** | Trưởng khoa | **ADMIN** | Quản trị chuyên môn, phê duyệt báo cáo |
+| **U002** | **Lê Tuấn Anh** | Bác sĩ | **USER** | Cán bộ thực hiện |
+| **U003** | **Nguyễn Thị Ngân** | Bác sĩ | **USER** | Cán bộ thực hiện |
+| **U004** | **Lương Thị Thùy Dung** | Kỹ thuật viên | **USER** | Cán bộ thực hiện |
+| **U005** | **Nguyễn Thị Thu Hương** | Kỹ thuật viên | **USER** | Cán bộ thực hiện |
+| **U006** | **Trần Thị Vân** | Kỹ thuật viên | **USER** | Cán bộ thực hiện |
+| **U007** | **Dương Văn Quang** | Kỹ thuật viên | **USER** | Cán bộ thực hiện |
+| **U008** | **Lại Hải Hà** | Kỹ thuật viên | **USER** | Cán bộ thực hiện |
+| **ADMIN**| **Lương Đình Trung** | Bác sĩ / Quản trị hệ thống | **ADMIN** | Quản trị kỹ thuật và hệ thống |
+
+**Ma trận phân quyền:**
+- **Admin (Trưởng khoa Đào Thị Nguyệt & BS. Lương Đình Trung):**
+  - Xem toàn cảnh Dashboard khoa; duyệt / yêu cầu làm lại các báo cáo của nhân viên kèm minh chứng trực quan.
+  - Điều chỉnh phân công người phụ trách, chu kỳ, hạn chót, số ngày nhắc trước tại Bảng phân công (`/assignment`).
+  - Quản lý danh sách nhân sự tại `/admin/users`: Thêm, sửa, vô hiệu hóa, xóa, cấp lại mật khẩu tạm thời ngẫu nhiên.
+  - Xem lịch sử nhật ký kiểm toán (Audit Log) toàn khoa.
+- **User (Bác sĩ, Kỹ thuật viên):**
+  - Xem toàn cảnh Dashboard để nắm tiến độ chung của toàn khoa.
+  - Xem danh sách công việc được giao của chính mình tại trang "Đầu việc của tôi" (`/my-tasks`).
+  - Nộp báo cáo hoàn thành, ghi chú và đính kèm minh chứng cho công việc của mình. Nút nộp báo cáo cho việc của người khác bị khóa mờ (chống nộp thay).
+  - Tự đổi mật khẩu cá nhân tại `/change-password`.
+
+---
+
+### 3.2. Danh mục 30 đầu việc quản lý ISO 15189
+
+| Mã | Mã ISO | Tên đầu việc quản lý | Người phụ trách | Tần suất | Quy tắc hạn hoàn thành | Trưởng khoa duyệt? | Nhắc trước | Link ngoài mặc định |
 | :---: | :---: | :--- | :--- | :---: | :--- | :---: | :---: | :--- |
 | **W001** | `XN.QL.01` | Quản lý trang thiết bị | **Dương Văn Quang** | Hàng tháng | Chốt rà soát trước ngày 05 tháng kế tiếp | Không | 3 ngày | 👉 `https://quanlithietbi.bstrung.vn` |
 | **W002** | `XN.QL.02` | Kiểm soát sự không phù hợp (NC) | **Nguyễn Thị Thu Hương** | Phát sinh | Cập nhật xử lý trong 24 giờ đầu | **Có** | 0 ngày | |
@@ -69,7 +72,7 @@
 | **W011** | `XN.QL.12` | Quản lý thông tin phòng xét nghiệm | **Nguyễn Thị Thu Hương** | Hàng quý | Rà soát trước ngày 05 tháng đầu quý sau | Không | 5 ngày | |
 | **W012** | `XN.QL.18` | Ngoại kiểm | **Lê Tuấn Anh** | Theo đợt | Hạn theo đợt chương trình ngoại kiểm | Không | 5 ngày | |
 | **W013** | `XN.QL.19` | Quản lý sinh phẩm, vật tư, hóa chất | **Dương Văn Quang** | Hàng tháng | Chốt rà soát trước ngày 03 tháng kế tiếp | Không | 3 ngày | |
-| **W014** | `XN.QL.20` | Đảm bảo tính khách quan | **Lê Tuấn Anh** | Hàng năm / Đổi | Rà soát trước 30/11; cập nhật khi có vụ việc | **Có** | 14 ngày | |
+| **W014** | `XN.QL.20` | Đảm bảo tính khách quan | **Lê Tuấn Anh** | Hàng năm / Đổi | Rà soát trước 30/11; cập nhật khi có sự việc | **Có** | 14 ngày | |
 | **W015** | `XN.QL.22` | Bảo mật thông tin | **Lê Tuấn Anh** | Hàng năm / Đổi | Rà soát trước 30/11; sự cố tạo ngay trong ngày| **Có** | 14 ngày | |
 | **W016** | `XN.QL.24` | Quản lý rủi ro | **Trần Thị Vân** | Hàng quý | Rà soát trước ngày 05 tháng đầu quý sau | **Có** | 7 ngày | |
 | **W017** | `XN.QL.25` | Cải tiến liên tục | **Lại Hải Hà** | Hàng quý | Chốt tiến độ trước ngày 10 tháng đầu quý sau | **Có** | 7 ngày | |
@@ -84,83 +87,58 @@
 | **W026** | `GB.QL.04` | Báo cáo kết quả Giải phẫu bệnh | **Lương Thị Thùy Dung** | Hàng tháng | Rà soát TAT trước ngày 05 tháng kế tiếp | Không | 3 ngày | |
 | **W027** | `GB.QL.05` | Lưu mẫu & xử lý mẫu hết hạn lưu | **Lương Thị Thùy Dung** | Hàng tháng | Rà soát trước ngày 10 tháng kế tiếp | Không | 5 ngày | |
 | **W028** | `GB.QL.06-07`| Lưu lam/block và mượn trả | **Lương Thị Thùy Dung** | Hàng tháng | Rà soát trước ngày 05 tháng kế tiếp | Không | 3 ngày | |
-| **W029** | `GB.QL.08` | Nội kiểm | **Lê Tuấn Anh** | Hàng tháng | Chốt tổng hợp trước ngày 05 tháng kế tiếp | Không | 3 ngày | 👉 `https://iso-gpb-duc-giang.vercel.app/` |
-| **W030** | `GB.QL.09` | Xác nhận giá trị SD / duyệt phương pháp | **Nguyễn Thị Ngân** | Phát sinh | Hạn do Trưởng khoa đặt theo kế hoạch | **Có** | 7 ngày | 👉 `https://iso-gpb-duc-giang.vercel.app/` |
+| **W029** | `GB.QL.08` | Nội kiểm | **Lê Tuấn Anh** | Hàng tháng | Chốt tổng hợp trước ngày 05 tháng kế tiếp | Không | 3 ngày | *(Linh hoạt gắn link ngoài)* |
+| **W030** | `GB.QL.09` | Xác nhận giá trị SD / duyệt phương pháp | **Nguyễn Thị Ngân** | Phát sinh | Hạn do Trưởng khoa đặt theo kế hoạch | **Có** | 7 ngày | *(Linh hoạt gắn link ngoài)* |
+
+*(Ghi chú: Trưởng khoa Đào Thị Nguyệt trực tiếp phụ trách đúng 2 việc: `W004` và `W023`).*
 
 ---
 
-## 4. THIẾT KẾ LOGIC TÍNH HẠN & TRẠNG THÁI VẬN HÀNH
+### 3.3. Thiết kế Logic Tính hạn & 5 Trạng thái Chuẩn ISO
+Hệ thống sử dụng **5 trạng thái vận hành chuẩn**:
+1. **`OVERDUE` (Quá hạn - Thẻ đỏ):** `Hôm nay > Due_Date` VÀ chưa có `Completed_Date`. Hiển thị nhãn trễ `(Trễ X ngày)`.
+2. **`DUE_SOON` (Sắp đến hạn - Thẻ vàng):** `Hôm nay >= Due_Date - Reminder_Days` VÀ chưa hoàn thành.
+3. **`NOT_DUE` (Chưa đến hạn - Thẻ xám):** `Hôm nay < Due_Date - Reminder_Days`.
+4. **`PENDING_APPROVAL` (Chờ duyệt - Thẻ xanh lơ):** Nhân viên đã nộp báo cáo hoàn thành, đang chờ Trưởng khoa xem xét phê duyệt.
+5. **`COMPLETED` (Đã hoàn thành - Thẻ xanh lá):** Đã có `Completed_Date` và được Trưởng khoa duyệt (nếu có yêu cầu duyệt).
 
-### A. 4 Trạng thái chuẩn ISO (Theo Sheet `STATUS_DICTIONARY`)
-- `OVERDUE` (Quá hạn - Thẻ đỏ): `Hôm nay > Due_Date` VÀ chưa có `Completed_Date`. Hiển thị nhãn số ngày trễ `(Trễ X ngày)`.
-- `DUE_SOON` (Sắp đến hạn - Thẻ vàng): `Hôm nay >= Due_Date - Reminder_Days` VÀ chưa hoàn thành.
-- `NOT_DUE` (Chưa đến hạn - Thẻ xám): `Hôm nay < Due_Date - Reminder_Days`.
-- `COMPLETED` (Đã hoàn thành - Thẻ xanh lá): Đã có `Completed_Date` và được Trưởng khoa phê duyệt (nếu có yêu cầu duyệt).
-- `PENDING_APPROVAL` (Chờ duyệt - Thẻ xanh lơ): Nhân viên đã nộp báo cáo, đang chờ Trưởng khoa duyệt.
-
-### B. Quy tắc sinh hạn tự động & Quét quá hạn toàn diện
-- **Công việc hàng ngày (Daily):** Tính các ngày làm việc Thứ 2 – Thứ 6 (tự động bỏ qua Thứ 7, Chủ nhật). Nếu nhân viên không làm ngày hôm trước hoặc các ngày trước đó, các task cũ đó sẽ được giữ nguyên và tự động chuyển thành `OVERDUE` (Quá hạn) khi bước sang ngày mới để kiểm soát nợ việc theo tiêu chuẩn ISO 15189.
-- **Cơ chế Quét Quá hạn Tự động lúc 17:05 Chiều (Daily 17:05 Overdue Sweep):** Mỗi khi hệ thống được nạp hoặc khi cron tự động kích hoạt vào lúc **17:05 chiều hàng ngày (sau giờ làm việc hành chính 16:30)**, hệ thống quét toàn bộ các task chưa hoàn thành (`status !== 'COMPLETED'`) trong CSDL Supabase. Nếu `Hôm nay > due_date`, hệ thống tự động đổi trạng thái sang `OVERDUE` và cập nhật tức thời vào Supabase, loại bỏ triệt để hiện tượng task cũ bị kẹt ở trạng thái `DUE_SOON`. Điều này giúp Trưởng khoa có thể rà soát số liệu vào cuối ngày làm việc để đôn đốc nhóm kịp thời.
-- **Công việc hàng tháng kỳ `M/YYYY`:** Hạn là ngày 03, 05 hoặc 10 của tháng `(M+1)/YYYY`.
-- **Công việc hàng quý:** Hạn là ngày 05 hoặc 10 của tháng đầu quý kế tiếp.
-- **Công việc hàng năm:** Hạn cố định theo lịch khoa (31/10, 30/11, 15/12).
-- **Công việc phát sinh:** Khởi tạo linh hoạt khi có sự cố, CAPA, khiếu nại...
+**Quy tắc sinh hạn & Quét quá hạn tự động lúc 17:05 Chiều:**
+- **Hàng ngày (Daily):** Tính các ngày làm việc Thứ 2 – Thứ 6 (tự động bỏ qua Thứ 7, Chủ nhật). Nếu nhân viên không làm ngày hôm trước, task cũ được giữ nguyên và tự động chuyển thành `OVERDUE` khi bước sang ngày mới để kiểm soát nợ việc.
+- **Quét Quá hạn Tự động (17:05 Overdue Sweep):** Khi cron tự động kích hoạt vào lúc **17:05 chiều hàng ngày (sau giờ làm việc hành chính 16:30)**, hệ thống quét toàn bộ task chưa hoàn thành trong CSDL. Nếu `Hôm nay > due_date`, hệ thống tự động đổi trạng thái sang `OVERDUE`.
+- **Hàng tháng:** Hạn là ngày 03, 05 hoặc 10 của tháng kế tiếp.
+- **Hàng quý:** Hạn là ngày 05 hoặc 10 của tháng đầu quý kế tiếp.
+- **Hàng năm:** Hạn cố định theo lịch khoa (31/10, 30/11, 15/12).
+- **Phát sinh:** Khởi tạo linh hoạt theo kế hoạch khi có sự cố, CAPA, khiếu nại.
 
 ---
 
-## 5. THIẾT KẾ CÁC MÀN HÌNH CHỨC NĂNG
+### 3.4. Thiết kế Các Màn hình Chức năng
+1. **Dashboard Tổng quan (`/`):**
+   - **4 Thẻ KPI Chuẩn hóa mẫu số 30 việc ISO:** Loại bỏ mẫu số động; Thẻ Hoàn thành thể hiện rõ: `X lượt đã nộp / 30 việc ISO (Y đầu việc đã xong)`. Thẻ Quá hạn và Sắp đến hạn hiển thị rõ số lượt trễ và số đầu việc bị nợ.
+   - **Khu vực Phê duyệt Trực quan cho Trưởng khoa:** Hiển thị trực tiếp ảnh thumbnail của sổ ghi chép / tài liệu minh chứng. Tích hợp bộ xem ảnh **Lightbox Modal** phóng to sắc nét đọc từng số liệu. Cảnh báo đỏ nếu nhân viên nộp form trống không minh chứng.
+   - **Bảng Điểm nghẽn đúng 7 cột chuẩn:** `STT`, `Mã`, `Đầu việc quản lý`, `Phụ trách`, `Hạn hoàn thành (kèm số ngày trễ)`, `Trạng thái`, `Thao tác` (có nút xem minh chứng trực tiếp).
+   - **Bảng 30 Đầu việc Quản lý Chất lượng (ISO 15189):** Gom nhóm duy trì đúng 30 dòng đại diện (W001–W030). Có cột Link ngoài gắn trực tiếp vào Supabase không bị mất khi F5; modal xem lịch sử nộp chi tiết nhiều ngày.
+2. **Trang "Đầu việc của tôi" (`/my-tasks`):**
+   - Lọc chính xác công việc của cá nhân đăng nhập.
+   - **Khóa mờ nút nộp báo cáo (Đúng người đúng việc):** Nút nộp báo cáo việc người khác tự động bị vô hiệu hóa kèm biểu tượng ổ khóa 🔒. Backend Server Action kiểm tra chéo session đăng nhập ngăn chặn nộp thay.
+   - Hỗ trợ tải ảnh Camera, Thư viện ảnh điện thoại và tệp PDF/Word. Tự động nén ảnh client-side từ 5-15MB xuống 200-500KB.
+3. **Trang Bảng phân công (`/assignment`):** Dành cho Admin điều chỉnh người phụ trách, chu kỳ, hạn chót, tạo việc phát sinh.
+4. **Trang Quản lý Nhân sự (`/admin/users`):** Thêm nhân viên mới, cấp mật khẩu tạm ngẫu nhiên, vô hiệu hóa / kích hoạt tài khoản.
 
-### 1. Dashboard Tổng quan (`/`)
-- Mọi thành viên đều xem được.
-- **Top Bar - 4 Thẻ KPI Chuẩn hóa theo 30 Đầu việc ISO (Medical Precision):**
-  - **Mẫu số chuẩn cố định 30 đầu việc:** Loại bỏ hoàn toàn phân số động `7/26` gây hiểu lầm. Thẻ **ĐÃ HOÀN THÀNH** thể hiện rõ: `X lượt đã nộp / 30 việc ISO` kèm chú thích `Ghi nhận tại Y đầu việc có lượt đã xong`.
-  - **Phân tách minh bạch giữa "Lượt ghi nhận (Instances)" và "Đầu việc quản trị (Work Items)":**
-    - Thẻ Quá hạn: `X lượt trễ (Y đầu việc)` $\rightarrow$ Trưởng khoa nắm ngay việc nợ dồn vào bao nhiêu quy trình.
-    - Thẻ Sắp đến hạn: `X lượt đôn đốc (Y đầu việc)`.
-  - Thanh Header trên cùng được dọn sạch, loại bỏ hoàn toàn các link module lẻ để giữ giao diện chuẩn mực, tinh gọn.
-- **Khu vực Phê duyệt Trực quan cho Trưởng khoa (Thực chất, Chống duyệt hình thức):**
-  - Hiển thị trực tiếp ảnh thu nhỏ (Thumbnail) của sổ ghi chép / tài liệu minh chứng ngay trên thẻ chờ duyệt của Trưởng khoa.
-  - Tích hợp bộ xem ảnh **Lightbox Modal**: Trưởng khoa bấm vào ảnh là phóng to toàn màn hình sắc nét để đọc từng dòng số liệu ghi chép thực tế.
-  - Hiển thị thẻ nút bấm xanh lá mở liên kết Google Drive / SharePoint khi nhân viên đính kèm link ngoài.
-  - Tự động gắn cờ cảnh báo đỏ nếu nhân viên nộp form trống: `⚠️ Không có ảnh/tài liệu/ link minh chứng` kèm khuyến nghị bấm "Yêu cầu bổ sung", loại bỏ hoàn toàn hiện tượng duyệt hình thức.
-- **Bảng Điểm nghẽn:** Đúng 7 cột chuẩn (`STT`, `Mã`, `Đầu việc quản lý`, `Phụ trách`, `Hạn hoàn thành (kèm số ngày trễ)`, `Trạng thái`, `Thao tác` có nút xem minh chứng trực tiếp). Ưu tiên việc Quá hạn lên trên đầu. Mọi ngày trễ của công việc hàng ngày đều được liệt kê chi tiết tại đây để Trưởng khoa đôn đốc.
-- **Thẻ Tiến độ Nhân sự:** Thống kê khối lượng từng người, bấm vào lọc ra ngay công việc của người đó (BS. Đào Thị Nguyệt ra đúng 2 việc).
-- **Bảng 30 Đầu việc Quản lý Chất lượng (ISO 15189):**
-  - **Cơ chế giữ chuẩn 30 dòng (Anti-clutter):** Gom nhóm theo từng đầu việc để bảng luôn duy trì đúng 30 dòng đại diện chuẩn (W001 – W030), không bị phình to khi công việc hàng ngày tích lũy qua nhiều ngày. Bộ nút lọc phía trên bảng (`Tất cả`, `Quá hạn`, `Sắp đến hạn`, `Chờ duyệt`, `Đã xong`) tính toán chính xác trên danh mục 30 đầu việc này, đảm bảo nhãn "Tất cả" luôn hiển thị đúng chuẩn `Tất cả (30)`.
-  - **Cơ chế Lọc "Đã xong" & Theo dõi Lịch sử Nộp (Audit History):**
-    - Khi lọc "Đã xong", hệ thống không bị rỗng (0 dòng) khi các đầu việc hàng ngày (như `XN.QL.10` của CN. Trần Thị Vân) bước sang ngày mới.
-    - Hiển thị huy hiệu trực quan: `✓ Đã nộp X ngày gần nhất (Lượt hôm nay: Đang thực hiện)`.
-    - **Modal Lịch sử nộp chi tiết:** Tại cột Minh chứng, Trưởng khoa có nút `Lịch sử (X ngày)`. Bấm vào sẽ mở popup liệt kê chi tiết toàn bộ các ngày đã nộp trong kỳ (ngày kiểm soát, thời gian nộp, ghi chú, xem ảnh sổ/mở Drive của từng ngày).
-  - **Cảnh báo nợ việc hàng ngày:** Nếu đầu việc hàng ngày có các ngày cũ chưa làm, hệ thống hiển thị nhãn cảnh báo đỏ trực tiếp dưới tên đầu việc: `⚠️ Còn nợ X ngày trước chưa kiểm soát`.
-  - Cấu trúc các cột: **`STT` (đánh số thứ tự 1-30)**, `Mã`, `Đầu việc quản lý`, `Phụ trách`, `Hạn hoàn thành`, `Trạng thái`, `Minh chứng`, `Thao tác`, và **cột cuối cùng là `Link ngoài`**.
-  - **Cột Link ngoài (Cơ chế bền vững - Single Source of Truth):**
-    - Link ngoài được lưu trữ tập trung tại bảng danh mục gốc `iso_work_items` trong CSDL Supabase và tự động ánh xạ sang danh sách task khi hiển thị.
-    - **Không bị mất khi F5 / reset:** Dù người dùng tải lại trang, đổi thiết bị hay reset phiên làm việc, link đã gắn luôn được nạp chính xác 100%.
-    - Đầu việc đã có link: Hiển thị nút **"Mở link"** chuyển đến hệ thống chuyên dụng (tab mới).
-    - Với tài khoản Admin: Có nút **Sửa link (✏️)** và **Xóa link (🗑️)** trực tiếp trên từng dòng.
-    - Đầu việc chưa có link: Admin thấy nút **`+ Gắn link`**.
-    - **Cơ chế Module động (Zero Code Change):** Khi khoa có thêm bất kỳ module/phần mềm mới nào (như LIS/HIS, quản lý sự cố mới), Trưởng khoa chỉ cần bấm nút gắn link để dán URL mới và lưu trực tiếp vào CSDL Supabase, hoặc bấm xóa link để nạp lại khi có thay đổi.
+---
 
-### 2. Trang "Đầu việc của tôi" & Báo cáo (`/my-tasks`)
-- Lọc chính xác chỉ hiển thị các công việc được giao cho cá nhân đang đăng nhập.
-- **Cơ chế Khóa mờ nút nộp báo cáo (Đúng người đúng việc):**
-  - Ở tab "Toàn khoa" hoặc khi xem công việc của người khác: Nút "Báo cáo hoàn thành" tự động **bị làm mờ (disabled, opacity-60, cursor-not-allowed)**, có biểu tượng ổ khóa 🔒 và ghi chú: `Chỉ phân công cho [Tên người phụ trách]`. Người không có phận sự không thể bấm vào nộp thay.
-  - Chỉ người phụ trách chính thức (hoặc Trưởng khoa/Admin) mới có quyền mở form và nộp báo cáo.
-  - **Bảo vệ hai lớp tại Server:** Backend Server Action đối chiếu session đăng nhập với người được phân công của task; từ chối và cảnh báo nếu có hành vi nộp thay trái phép.
-  - **Ràng buộc đầu vào tối thiểu (Chống nộp trống):** Bắt buộc phải có ít nhất 1 ảnh/tệp, link Drive, hoặc ghi chú cụ thể $\ge 6$ ký tự trước khi bấm nộp.
-- Thao tác nộp báo cáo: Chọn ngày hoàn thành, viết ghi chú, dán link hoặc tải minh chứng.
-- **Hỗ trợ đầy đủ các nguồn tải ảnh trên điện thoại (Mobile Upload Options):**
-  - Cho phép người dùng tùy chọn: Chụp ảnh trực tiếp bằng Camera, chọn ảnh có sẵn từ Thư viện ảnh (Photo Library), hoặc chọn tệp PDF/Word/Excel. Không ép buộc chỉ mở Camera.
-- **Nén ảnh tự động ngay trên trình duyệt điện thoại** trước khi tải lên (Client-side compression: từ 5-15MB còn 200-500KB).
-- **Nút bấm xem minh chứng trực tiếp** (cho cả nhân viên và Trưởng khoa mở xem ngay ảnh/PDF/link ngoài).
-- Tab "Phê duyệt" dành riêng cho Trưởng khoa để duyệt hoặc yêu cầu làm lại.
+### 3.5. Hạ tầng & Kiến trúc Phòng thủ
+- **Cơ sở dữ liệu chính:** Supabase PostgreSQL (Project Ref: `fkjmiatwdcgxdkqnwhgn`) lưu trữ toàn bộ người dùng, 30 đầu việc, danh sách task và lịch sử kiểm toán.
+- **Hệ thống Góp ý (Feedback):** Firebase Firestore (`app/actions/feedback.ts`).
+- **Kiến trúc Giữ thức 2 lớp Vĩnh viễn (Dual Engine Keep-Alive 17:05 VN):**
+  - *Lớp 1 (GitHub Actions - `supabase-keep-alive.yml`):* Ping `iso_work_items` và gọi Web Dashboard lúc 10:05 UTC (17:05 VN) bằng API Secret an toàn; tích hợp cơ chế tự động duy trì workflow native.
+  - *Lớp 2 (Vercel Cron Job - `vercel.json`):* Chạy độc lập trên hạ tầng Vercel lúc 10:05 UTC gọi `/api/cron/keep-alive`.
+- **In-Memory Caching & Fallback Data:** Lưu cache trên server để tối ưu tốc độ và tiết kiệm băng thông; dữ liệu dự phòng `lib/fallback-data.ts` đảm bảo giao diện luôn hiển thị khi mạng gián đoạn.
 
-### 3. Trang Bảng phân công & Điều hành (`/assignment`)
-- Dành cho Trưởng khoa / Admin.
-- Cho phép đổi người phụ trách, đổi hạn, đổi chu kỳ mà không cần can thiệp mã nguồn.
-- Tạo nhanh công việc phát sinh (Sự không phù hợp, CAPA, Khiếu nại...).
+---
 
-### 4. Trang Quản lý Nhân sự (`/admin/users`)
-- Thêm nhân viên mới, chỉnh sửa thông tin nhân viên.
-- Đặt lại mật khẩu tạm `isogpb@2026` khi nhân viên quên mật khẩu.
-- Vô hiệu hóa hoặc kích hoạt lại tài khoản.
+## 4. NHẬT KÝ THAY ĐỔI THEO NGÀY
+- **22/09/2026:** Khởi tạo kiến trúc e-ISO Pathology Tracker; chuyển phương thức xác thực từ Google Sign-In sang Đăng nhập nội bộ Cán bộ nhân viên.
+- **26/09/2026:** Triển khai Kiến trúc Giữ thức Vĩnh viễn 2 lớp (Dual Engine Keep-Alive) kết hợp tự động quét quá hạn lúc 17:05 chiều giờ Việt Nam.
+- **01/10/2026:** Chuẩn hóa KPI mẫu số 30 đầu việc ISO; nâng cấp Bảng Điểm nghẽn lên 7 cột có STT; thiết lập cơ chế khóa mờ nộp thay và bộ xem minh chứng Lightbox Modal cho Trưởng khoa.
+- **17/10/2026:** Nâng cấp toàn diện bảo mật: chuyển sang băm mật khẩu `bcrypt` (cost factor 10), xóa bỏ toàn bộ mật khẩu cố định và cửa sau fallback; xóa thông tin nhạy cảm (SĐT, email cá nhân) khỏi hồ sơ; dọn dẹp và chuẩn hóa thư mục dự án theo `rule.md` mục 5.

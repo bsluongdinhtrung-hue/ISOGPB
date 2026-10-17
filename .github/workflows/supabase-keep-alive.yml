@@ -19,17 +19,21 @@ jobs:
       - name: Ping Supabase Database Table
         run: |
           echo "Sending keep-alive query to Supabase..."
-          API_KEY="${{ secrets.SUPABASE_ANON_KEY || 'sb_publishable_iTgoowvYoE7G9jwbK1vY1w_EhaGfrA_' }}"
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "https://fkjmiatwdcgxdkqnwhgn.supabase.co/rest/v1/iso_users?select=count" \
-            -H "apikey: $API_KEY" \
-            -H "Authorization: Bearer $API_KEY" \
-            -H "User-Agent: GitHub-Actions-KeepAlive")
-          echo "Supabase Response Status Code: $RESPONSE"
-          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 400 ]; then
-            echo "✅ Supabase is active and responding successfully!"
+          API_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          if [ -n "$API_KEY" ]; then
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X GET "https://fkjmiatwdcgxdkqnwhgn.supabase.co/rest/v1/iso_work_items?select=count" \
+              -H "apikey: $API_KEY" \
+              -H "Authorization: Bearer $API_KEY" \
+              -H "User-Agent: GitHub-Actions-KeepAlive")
+            echo "Supabase Response Status Code: $RESPONSE"
+            if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 400 ]; then
+              echo "✅ Supabase is active and responding successfully!"
+            else
+              echo "⚠️ Warning: Supabase returned status code $RESPONSE"
+            fi
           else
-            echo "⚠️ Warning: Supabase returned status code $RESPONSE"
+            echo "ℹ️ SUPABASE_ANON_KEY secret not set, relying on Web Dashboard Keep-Alive."
           fi
 
       - name: Ping Web Dashboard & Run Overdue Sweep at 17:05

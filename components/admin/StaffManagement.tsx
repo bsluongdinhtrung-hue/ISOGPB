@@ -47,6 +47,15 @@ export function StaffManagement({ initialUsers, currentAdminEmail }: StaffManage
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
+function generateRandomTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let pwd = "";
+  for (let i = 0; i < 10; i++) {
+    pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return pwd;
+}
+
   // Form states
   const [formData, setFormData] = useState({
     fullName: "",
@@ -54,9 +63,9 @@ export function StaffManagement({ initialUsers, currentAdminEmail }: StaffManage
     title: "Kỹ thuật viên",
     role: "USER" as UserRole,
     phone: "",
-    initialPassword: "isogpb@2026",
+    initialPassword: "",
   });
-  const [resetPasswordVal, setResetPasswordVal] = useState("isogpb@2026");
+  const [resetPasswordVal, setResetPasswordVal] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -86,7 +95,7 @@ export function StaffManagement({ initialUsers, currentAdminEmail }: StaffManage
       title: "Kỹ thuật viên",
       role: "USER",
       phone: "",
-      initialPassword: "isogpb@2026",
+      initialPassword: generateRandomTempPassword(),
     });
     setShowAddModal(true);
   };
@@ -106,7 +115,7 @@ export function StaffManagement({ initialUsers, currentAdminEmail }: StaffManage
 
   const handleOpenReset = (user: UserProfile) => {
     setSelectedUser(user);
-    setResetPasswordVal("isogpb@2026");
+    setResetPasswordVal(generateRandomTempPassword());
     setShowResetModal(true);
   };
 
